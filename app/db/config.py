@@ -1,0 +1,122 @@
+# app/db/config.py
+from urllib.parse import quote_plus
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class MySQLConfig(BaseSettings):
+    """
+    Configuration schema for MySQL database.
+
+    Attributes
+    ----------
+    host : str
+        Hostname or IP address of the MySQL server. Default is `"127.0.0.1"`.
+    external_port : int
+        TCP port the server listens on. Must be in the range 1-65535.
+        Default is `3306`.
+    username : str
+        Database user name.
+    password : str
+        Database user password.
+    db_name : str
+        Name of the MySQL database to connect to.
+    echo : bool, optional
+        Enables or disables SQL statement logging to stdout.
+        Useful for debugging during development; should be `False` in production.
+        Default is `False`.
+    autocommit : bool, optional
+        Controls whether SQLAlchemy sessions automatically commit transactions.
+        When `False` (recommended), explicit `commit()` calls are required.
+        Default is `False`.
+    autoflush : bool, optional
+        Controls whether pending ORM changes are automatically flushed before queries.
+        When `False` (recommended), flushing is manual, giving full control over side effects.
+        Default is `False`.
+    
+    Notes:
+    ------
+    1. Automatically loads settings from a `.env` file in the current working directory
+       using a module-specific prefix specified.
+    2. The `.env` file must use UTF-8 encoding. 
+    3. Variable names are case-insensitive.
+    4. Any extra (unrecognized) variables are silently ignored.
+    5. The configuration is immutable after instantiation.
+    6. During instantiation, values are resolved in the following order of precedence 
+       (from highest to lowest priority):
+        1. **Explicitly passed arguments** — values provided directly to the constructor.
+        2. **Environment variables** — including those loaded from the `.env` file,
+           prefixed according to the subclass's `env_prefix`.
+        3. **Code-defined defaults** — fallback values specified as field defaults
+           in the class definition.
+    """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+        frozen=True,
+        env_prefix="MYSQL_"
+    )
+
+    host: str = "127.0.0.1"
+    external_port: int = Field(default=3306, ge=1, le=65535)
+    username: str
+    password: str
+    db_name: str
+    echo: bool = False
+    autocommit: bool = False
+    autoflush: bool = False
+
+    @property
+    def sync_database_url(self) -> str:
+        """
+        Build synchronous MySQL database connection URL from configuration settings.
+
+        Returns
+        -------
+        str
+            Complete MySQL connection URL with credentials in the format:
+            mysql+mysqlconnector://username:password@host:port/db_name
+        
+        Notes
+        -----
+        The password is URL-encoded using `quote_plus` to safely handle
+        special characters that might be present in the password string.
+        """
+
+        return (
+            f"mysql+mysqlconnector://{self.username}:{quote_plus(self.password)}"
+            f"@{self.host}:{self.external_port}/{self.db_name}"
+        )
+    
+    @property
+    def async_database_url(self) -> str:
+        """
+        Build asynchronous MySQL database connection URL from configuration settings.
+
+        Returns
+        -------
+        str
+            Complete MySQL connection URL with credentials in the format:
+            mysql+aiomysql://username:password@host:port/db_name
+        
+        Notes
+        -----
+        The password is URL-encoded using `quote_plus` to safely handle
+        special characters that might be present in the password string.
+        """
+
+        return (
+            f"mysql+aiomysql://{self.username}:{quote_plus(self.password)}"
+            f"@{self.host}:{self.external_port}/{self.db_name}"
+        )
+
+
+# Initialize MySQL configuration singleton
+# Since MySQL database settings are static for the application's lifetime
+# and any configuration changes require a full application restart,
+# it is safe to instantiate the config once at module level and reuse
+# it throughout the application as a singleton.
+mysql_config = MySQLConfig()

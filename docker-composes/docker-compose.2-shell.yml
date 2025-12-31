@@ -1,0 +1,81 @@
+services:
+  # =====================================================
+  # MySQL Database Server Service
+  # =====================================================
+  mysql-server:
+    image: docker.io/library/mysql:9.3.0-oraclelinux9
+    container_name: ${MYSQL_SERVER_CONTAINER}
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    
+    ports:
+      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"
+    
+    # Network configuration for service communication
+    # Connects to custom bridge network for isolated communication between services
+    networks:
+      - mysql-network
+    
+    # Health check configuration to monitor database availability
+    # Ensures the database is ready to accept connections before dependent services start
+    healthcheck:
+      # Use mysqladmin utility to test database connectivity and server responsiveness
+      # Uses root credentials for health check verification
+      test: ["CMD", "mysqladmin", "ping", "-h", "${MYSQL_HOST}", "-u", "root", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================
+  # MySQL Client Service
+  # Interactive database client for development and administration
+  # =====================================================
+  mysql-client:
+    # Using same MySQL image to ensure compatibility with server
+    image: docker.io/library/mysql:9.3.0-oraclelinux9
+    
+    # Container naming for easy identification and management
+    container_name: ${MYSQL_CLIENT_CONTAINER}
+    
+    # MySQL Client Environment Configuration:
+    # ====================================================
+    #   Automatic Connection Configuration:
+    #   - MYSQL_HOST: Database server hostname
+    #   - MYSQL_TCP_PORT: Internal port for database connections
+    #
+    # NOTE: In Docker Compose, containers on the same custom network (mysql-network)
+    # communicate using service names as hostnames.
+    # Hence, MYSQL_HOST is hardcoded to 'mysql-server' (the service name) for correct
+    # internal DNS resolution within the Docker network.
+    # ====================================================
+    environment:
+      MYSQL_HOST: mysql-server
+      MYSQL_TCP_PORT: ${MYSQL_INTERNAL_PORT}
+
+    # Service dependency configuration
+    # Ensures mysql-server is healthy before starting client
+    depends_on:
+      mysql-server:
+        # Wait for health check to pass, not just container start
+        condition: service_healthy
+    
+    # Network configuration - same network as server for communication
+    networks:
+      - mysql-network
+    
+    # Keeps container running indefinitely to allow interactive shell access
+    command: tail -f /dev/null
+
+# =====================================================
+# Network Configuration
+# =====================================================
+networks:
+  # Custom bridge network for MySQL services isolation
+  # Provides internal DNS resolution and network segmentation
+  mysql-network:
+    # Bridge driver for single-host networking with custom configuration
+    # Allows containers to communicate while isolating from other networks
+    driver: bridge

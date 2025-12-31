@@ -1,0 +1,29 @@
+services:
+  # =====================================================
+  # MySQL Database Server Service
+  # =====================================================
+  mysql-server:
+    # Using the official MySQL image for optimal performance and reliability
+    image: docker.io/library/mysql:9.3.0-oraclelinux9
+    
+    # Container naming for easy identification and management
+    container_name: ${MYSQL_SERVER_CONTAINER}
+    
+    # MySQL Database Environment Configuration:
+    # ====================================================
+    # - MySQL automatically handles not root user and not system database creation during first startup;
+    #   no init scripts are required
+    # - Root username and System database name cannot be customized
+    # - MYSQL_USER will have full privileges only on the MYSQL_DATABASE, not on the entire MySQL server (unlike Root)
+    # ====================================================
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    
+    # Port mapping configuration
+    # Maps external host port to internal container port (default MySQL port 3306)
+    ports:
+      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"

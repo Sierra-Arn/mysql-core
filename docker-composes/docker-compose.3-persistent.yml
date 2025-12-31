@@ -1,0 +1,67 @@
+services:
+  # =====================================================
+  # MySQL Database Server Service
+  # =====================================================
+  mysql-server:
+    image: docker.io/library/mysql:9.3.0-oraclelinux9
+    container_name: ${MYSQL_SERVER_CONTAINER}
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"
+    volumes:
+      # Mounting named volume for persistent MySQL data storage
+      # Volume mysql-data will be created automatically on first run
+      # MySQL is ACID-compliant: each committed transaction is immediately written to disk
+      # This ensures data durability - if you receive confirmation of a successful operation,
+      # the data is already safely stored on disk, even if the container crashes immediately after
+      # All database data will be saved in this volume
+      - ${MYSQL_DATA_PATH}:/var/lib/mysql
+    networks:
+      - mysql-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "${MYSQL_HOST}", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================
+  # MySQL Client Service
+  # Interactive database client for development and administration
+  # =====================================================
+  mysql-client:
+    image: docker.io/library/mysql:9.3.0-oraclelinux9
+    container_name: ${MYSQL_CLIENT_CONTAINER}
+    
+    environment:
+      MYSQL_HOST: mysql-server
+      MYSQL_TCP_PORT: ${MYSQL_INTERNAL_PORT}
+    
+    depends_on:
+      mysql-server:
+        condition: service_healthy
+  
+    networks:
+      - mysql-network
+    
+    command: tail -f /dev/null
+
+# =====================================================
+# Network Configuration
+# =====================================================
+networks:
+  mysql-network:
+    driver: bridge
+
+# =====================================================
+# Volume Configuration
+# =====================================================
+volumes:
+  mysql-data:
+    # Using local driver to store data on the host machine
+    driver: local
+    # Data will persist even after container removal
+    # On docker-compose restart, data will be restored automatically
