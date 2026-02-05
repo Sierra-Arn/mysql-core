@@ -13,13 +13,33 @@ services:
     ports:
       - "${MYSQL_EXTERNAL_PORT}:${MYSQL_INTERNAL_PORT}"
     volumes:
-      # Mounting named volume for persistent MySQL data storage
-      # Volume mysql-data will be created automatically on first run
+      # Mounting volume for persistent MySQL data storage
       # MySQL is ACID-compliant: each committed transaction is immediately written to disk
       # This ensures data durability - if you receive confirmation of a successful operation,
       # the data is already safely stored on disk, even if the container crashes immediately after
-      # All database data will be saved in this volume
-      - ${MYSQL_DATA_PATH}:/var/lib/mysql
+      # All database files, tables, indexes, and binary logs are stored in the /var/lib/mysql directory
+      #
+      # There are two approaches to persist MySQL data:
+      # (Both approaches ensure data persists across container restarts and removals)
+      # =====================================================
+      # Option 1: Bind Mount (currently active)
+      # Maps a host directory directly to the container's /var/lib/mysql directory
+      # Data is stored at the path specified by MYSQL_DATA_PATH on the host machine
+      # Provides direct access to database files from the host filesystem
+      - ../${MYSQL_DATA_PATH}:/var/lib/mysql
+      # =====================================================
+      # Option 2: Named Volume (alternative approach)
+      # Uses Docker-managed storage with a named volume for better isolation and portability
+      # Docker manages the storage location (typically /var/lib/docker/volumes/) instead of
+      # using a direct path on the host filesystem
+      # This is NOT a bind mount - Docker controls where and how data is stored
+      # 
+      # To use this approach:
+      # 1. Comment out the bind mount line above
+      # 2. Uncomment the volumes section at the bottom of this file
+      # 3. Uncomment the line below
+      # - mysql-data:/var/lib/mysql
+      # =====================================================
     networks:
       - mysql-network
     healthcheck:
@@ -35,18 +55,14 @@ services:
   mysql-client:
     image: docker.io/library/mysql:9.3.0-oraclelinux9
     container_name: ${MYSQL_CLIENT_CONTAINER}
-    
     environment:
       MYSQL_HOST: mysql-server
       MYSQL_TCP_PORT: ${MYSQL_INTERNAL_PORT}
-    
     depends_on:
       mysql-server:
         condition: service_healthy
-  
     networks:
       - mysql-network
-    
     command: tail -f /dev/null
 
 # =====================================================
@@ -57,11 +73,12 @@ networks:
     driver: bridge
 
 # =====================================================
-# Volume Configuration
+# Volumes Configuration
+# Uncomment this section if using named volumes instead of bind mounts
 # =====================================================
-volumes:
-  mysql-data:
-    # Using local driver to store data on the host machine
-    driver: local
-    # Data will persist even after container removal
-    # On docker-compose restart, data will be restored automatically
+# volumes:
+#   mysql-data:
+#     # Using local driver to store data on the host machine
+#     driver: local
+#     # Data will persist even after container removal
+#     # On docker-compose restart, data will be restored automatically
