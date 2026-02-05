@@ -41,8 +41,8 @@ a lightweight, cross-platform command runner that replaces complex shell scripts
 
 ### **Testing & Development Dependencies**
 
-- [ipykernel](https://github.com/ipython/ipykernel) — 
-the IPython kernel for Jupyter, enabling interactive notebook development and seamless integration with the project’s virtual environments.
+- [JupyterLab](https://github.com/jupyterlab/jupyterlab) — 
+a next-generation web-based interactive development environment for Jupyter notebooks; used here to create interactive documents for testing and verifying code execution.
 
 ## **Quick Start**
 
@@ -95,17 +95,38 @@ the IPython kernel for Jupyter, enabling interactive notebook development and se
 
 ### **III. Testing**
 
-Once a database is ready, you can run and test the MySQL implementation with interactive Jupyter notebooks in `playground-testing/`. Additionally, you can open a MySQL shell to manually verify that everything is working correctly:
+Once a database is ready, you can run and test the MySQL implementation with interactive Jupyter notebooks in `playground-testing/`:
 
-```bash
-just mysql-shell 2
-```
+1. **Launch JupyterLab**
+
+    ```bash
+    pixi run -e test jupyter lab
+    ```
+
+2. **Test the MySQL implementation**
+    - JupyterLab should open automatically in your browser at the default address.
+    - In JupyterLab, navigate to the `playground-testing/` folder.
+    - Open and execute the notebooks interactively.
+
+3. **(Optional) Verify database manually**  
+You can open a MySQL shell to manually verify that everything is working correctly:
+
+    ```bash
+    just mysql-shell 2
+    ```
 
 ### **IV. Cleanup**
 
-```bash
-just mysql-down 2
-```
+When you finish testing:
+
+1. **Stop JupyterLab**  
+   In the terminal where JupyterLab is running, press `Ctrl+C` to shut it down.
+
+2. **Stop MySQL**
+
+    ```bash
+    just mysql-down 2
+    ```
 
 ## **License**
 

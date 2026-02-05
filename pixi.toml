@@ -3,7 +3,7 @@ authors = ["Sierra Arn"]
 channels = ["conda-forge"]
 name = "mysql-core"
 platforms = ["linux-64"]
-version = "0.2.0"
+version = "0.2.1"
 
 [tasks]
 
@@ -17,7 +17,7 @@ aiomysql = "*"
 just = "*"
 
 [feature.test.dependencies]
-ipykernel = "*"
+jupyterlab = "*"
 
 [environments]
 test = ["test"]
