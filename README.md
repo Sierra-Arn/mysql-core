@@ -84,7 +84,7 @@ the IPython kernel for Jupyter, enabling interactive notebook development and se
 
 5. **Start MySQL database**
    ```bash
-   just mysql-up-2
+   just mysql-up 2
    ```
 
 6. **Create a database migration & Apply it**
@@ -98,13 +98,13 @@ the IPython kernel for Jupyter, enabling interactive notebook development and se
 Once a database is ready, you can run and test the MySQL implementation with interactive Jupyter notebooks in `playground-testing/`. Additionally, you can open a MySQL shell to manually verify that everything is working correctly:
 
 ```bash
-just mysql-shell-2
+just mysql-shell 2
 ```
 
 ### **IV. Cleanup**
 
 ```bash
-just mysql-down-2
+just mysql-down 2
 ```
 
 ## **License**
