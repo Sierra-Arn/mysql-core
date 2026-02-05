@@ -61,7 +61,7 @@ the IPython kernel for Jupyter, enabling interactive notebook development and se
 1. **Clone the repository**
 
     ```bash
-    git clone https://github.com/Sierra-Arn/mysql-core.git
+    git clone git@github.com:Sierra-Arn/mysql-core.git
     cd mysql-core
     ```
 
